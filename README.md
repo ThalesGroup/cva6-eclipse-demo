@@ -1,9 +1,10 @@
 
 # Introduction
 
-In this repository we show how easy it is to reproduce a full debugging environment on the CVA6 processor on the Genesys 2 board. Baremetal and Linux application debugging is demonstrated in command line interface CLI or with the Eclipse graphical interface. We provide hardware bitsream and Linux image for those who wants to start faster on the board. We also provide a guide to regenerate them.
+In this repository we show how easy it is to reproduce a full debugging environment on the CVA6 processor on the Genesys 2 board. We provide a guide to regenerate the hardware bitsream and how to flash it on the board. Also, this guide explains how to generate the software tools and the compatible Linux image.
+Baremetal and Linux application debugging is also demonstrated in command line interface CLI or with the Eclipse graphical interface. 
 
-The hardware provided image is based on the commit [cva6:#d209b04](https://github.com/openhwgroup/cva6/tree/d209b0406dba696744185001bf7257af7d1d8890) and the Linux image is based on the commit [cva6-sdk:#cb35d1d](https://github.com/openhwgroup/cva6-sdk/tree/cb35d1dba01da51b1489fb109f1b5598bd655267).
+The hardware generate image is based on the commit [cva6:#d209b04](https://github.com/openhwgroup/cva6/tree/d209b0406dba696744185001bf7257af7d1d8890) and the Linux image is based on the commit [cva6-sdk:#cb35d1d](https://github.com/openhwgroup/cva6-sdk/tree/cb35d1dba01da51b1489fb109f1b5598bd655267).
 
 # Required depedencies
 
@@ -24,7 +25,15 @@ You will need to connect both the UART and the JTAG micro USB of the Genesys 2 t
 
 ### Vivado 2020.1
 
-You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also needed to program the bitsream onto the Genesys 2 board. ~~After installation, if you want to regenerate the bitstream, the GenesysII board's configuration files need to be installed. You can find them here :~~
+You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also needed to program the bitsream onto the Genesys 2 board. ~~After installation the GenesysII board's configuration files need to be installed. You can find them here :~~
+
+### RISC-V Toolchain
+
+If you want to perform the baremetal demo, you will need the full fledge RISC-V toolchain. To compile it, go to the riscv-gnu-toolchain directory, choose a proper install path and run the following command:
+```bash
+./configure --prefix=RISCV_TOOLCHAIN_INSTALL_PATH --with-cmodel=medany
+make
+```
 
 ### Buildroot
 
@@ -46,7 +55,7 @@ PATH=`realpath cva6-sdk/buildroot/output/host/bin/`:$PATH
 
 # Build Hardware
 
-If you want to re-build the bitstream, retrieve the CVA6 submodule containing the COREV-APU SoC. Then run the following script:
+To re-build the bitstream, retrieve the CVA6 submodule containing the COREV-APU SoC. Then run the following commands:
 
 ```bash
 cd cva6
@@ -66,13 +75,13 @@ Once the CVA6 is flashed in the internal memory of the board, you can debug the 
 
 ## GDB CLI
 
-The Buildroot toolchain provides openocd and gdb for the CVA6 architecture. Compile a sample program with :
+Compile a sample program with :
 
 ```bash
-cat << EOF | riscv64-linux-gcc -march=rv64g  -mabi=lp64d -x c -o hello.elf -
-#include <stdio.h>
-int main() { printf("Hello World CVA6!\n"); }
-EOF
+PATH=RISCV_TOOLCHAIN_INSTALL_PATH/bin:$PATH
+cd cva6-baremetal-bsp/app
+git checkout 64bits
+make helloworld
 ```
 
 Connect a Console on the UART output of the Genesys2 :
@@ -85,7 +94,7 @@ Then take control of the SoC and launch the program :
 
 ```bash
 openocd -f cva6/corev_apu/fpga/ariane.cfg& 
-riscv64-linux-gdb hello.elf -x gdb_command
+riscv64-linux-gdb helloworld.riscv -x gdb_command
 ```
 
 You should have a gdb program with control on the CVA6. You can look around and press "c" to continue the execution. The test string is displayed on the console terminal.
@@ -94,15 +103,17 @@ You should have a gdb program with control on the CVA6. You can look around and 
 
 To build the linux image, go to cva6-sdk submodule and type 
 ```bash
+cd cva6-sdk
+git submodule update --init
 make images
 ```
 
 You now should have a populated cva6-sdk/install64 folder.
 
-You then need to flash your SD card with the cva6-sdk target. The correct device needs to be specified in the command. 
-**Warning, providing a bad device can mess up your system. Please double check**
+You then need to flash your SD card with the cva6-sdk target. Insert the SD-card in your host and identify the correct device path with ```dmesg | tail``` command. 
+**Warning, providing a bad device path can mess up your system. Please double check**
 ```bash
-$ sudo -E make flash-sdcard SDDEVICE=/dev/sd$
+sudo -E make flash-sdcard SDDEVICE=/dev/sd$
 ```
 
 The SD card should now be formated and written, ready to boot. Insert it in the Genesys2 board and power it on. The console on the UART output should display the linux boot process and log in the system.
@@ -114,7 +125,7 @@ In order to debug on Linux, a remote connection is mandatory. As the UART is alr
 # On the Genesys2
 udhpc
 ```
-Or set a static IP on the same network like this:
+Or set a static IP on the same network as the host like this:
 ```bash
 # On the Genesys2
 ifconfig eth0 192.168.##.##

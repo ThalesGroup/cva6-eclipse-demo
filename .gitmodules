@@ -4,3 +4,9 @@
 [submodule "cva6-sdk"]
 	path = cva6-sdk
 	url = https://github.com/openhwgroup/cva6-sdk
+[submodule "riscv-gnu-toolchain"]
+	path = riscv-gnu-toolchain
+	url = https://github.com/riscv-collab/riscv-gnu-toolchain
+[submodule "cva6-baremetal-bsp"]
+	path = cva6-baremetal-bsp
+	url = https://github.com/eyssartk/cva6-baremetal-bsp
