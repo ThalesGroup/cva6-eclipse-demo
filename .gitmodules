@@ -9,4 +9,4 @@
 	url = https://github.com/riscv-collab/riscv-gnu-toolchain
 [submodule "cva6-baremetal-bsp"]
 	path = cva6-baremetal-bsp
-	url = https://github.com/eyssartk/cva6-baremetal-bsp
+	url = https://github.com/ThalesGroup/cva6-baremetal-bsp
