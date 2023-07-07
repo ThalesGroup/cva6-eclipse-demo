@@ -8,7 +8,9 @@ The hardware generate image is based on the commit [cva6:#018dbc4](https://githu
 
 # Choose the CVA6 configuration you want
 
-The CVA6 provides multiple configurations. They can be found in [cva6/core/include](cva6/core/include). You can also define your own configuration with the [cva6/config_pkg_generator.py](cva6/config_pkg_generator.py) tool.
+The CVA6 provides multiple configurations. They can be found in [cva6/core/include](cva6/core/include). You can also define your own configuration with the [cva6/config_pkg_generator.py](cva6/config_pkg_generator.py) tool. This python tool will create a file /core/include/gen32_config_pkg.sv or /core/include/gen64_config_pkg.sv depending on the configuration your modifications are based on.
+
+The core configuration will have impacts on the software configuration. Today, Yocto generates Linux images for rv64imafdc, rv32ima or rv32imac. MMU is required for Linux execution (eg. sv0 will not work). The baremetal demo can manage all configurations.
 
 # Required depedencies
 
@@ -31,48 +33,43 @@ You will need to connect both the UART and the JTAG micro USB of the Genesys 2 t
 
 You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also needed to program the bitsream onto the Genesys 2 board. 
 
-
 ### RISC-V Toolchain
 
-If you want to perform the baremetal demo, you will need the full fledge RISC-V toolchain. To compile it, go to the riscv-gnu-toolchain directory, choose a proper install path and run the following command:
+If you want to perform the baremetal demo, you will need the full fledge RISC-V toolchain. To compile it, go to the riscv-gnu-toolchain directory, choose a proper install path, the configured arch and abi and run the following command:
 ```bash
-./configure --prefix=RISCV_TOOLCHAIN_INSTALL_PATH --with-cmodel=medany
+./configure --prefix=RISCV_TOOLCHAIN_INSTALL_PATH --with-cmodel=medany --with-arch=rv32ima --with-abi=ilp32
 make
 ```
 
-### Buildroot
+** Warning: You will need GCC13 if you want the Bitmanip extension **
 
-Buildroot is provided by the [cva6-sdk repository](https://github.com/openhwgroup/cva6-sdk). To install it, you need to install its requirements found in its README and then run the next lines.
+### OpenOCD for RISC-V
 
-```bash
-cd cva6-sdk
-git submodule update --init --recursive
-make all
-make -C buildroot host-gdb
-make -C buildroot host-openocd
+If you want to use a CLI debug, you will need openocd. Here are the steps to generate it :
+
+```
+git clone https://github.com/riscv/riscv-openocd
+cd riscv-openocd
+./configure --prefix=./install && make && make install
 ```
 
-You now have a RISC-V toolchain corresponding to the CVA6 architecture. It is located in cva6-sdk/buildroot/output/host/bin/. You must add it to the PATH environment variable of your building terminal:
-
-```bash
-PATH=`realpath cva6-sdk/buildroot/output/host/bin/`:$PATH
-```
+you should find the binary in riscv-openocd/install/bin/
 
 # Build Hardware
 
-To re-build the bitstream, retrieve the CVA6 submodule containing the COREV-APU SoC. Then run the following commands:
+To build the bitstream, retrieve the CVA6 submodule containing the COREV-APU SoC. You need to specify the correct chosen configuration package, then run the following commands:
 
 ```bash
 cd cva6
 git submodule update --init --recursive
-make fpga
+target=cv32a6_imac_sv32 make fpga
 ```
 
 This step is quite long. You should now have the cva6/corev_apu/fpga/work-fpga/ariane_xilinx.mcs memory configuration file. 
 
 # Flash the Genesys bitstream
 
-Be sure that the JP5 jumper is in QSPI position. The internal memory of the Genesys 2 can be configured by following this [guide](https://github.com/openhwgroup/cva6#programming-the-memory-configuration-file). The internal QSPI of the Genesys 2 should now be written with the COREV-APU SoC. 
+be sure that the JP5 jumper is in QSPI position. The internal memory of the Genesys 2 can be configured by following this [guide](https://github.com/openhwgroup/cva6#programming-the-memory-configuration-file). The internal QSPI of the Genesys 2 should now be written with the COREV-APU SoC. 
 
 # Baremetal debugging
 
@@ -106,19 +103,53 @@ You should have a gdb program with control on the CVA6. You can look around and 
 
 # Build and flash Linux image
 
-To build the linux image, go to cva6-sdk submodule and type 
-```bash
-cd cva6-sdk
-git submodule update --init
-make images
+## Build
+
+Yocto is provided by the [meta-cva6-yocto repository](https://github.com/openhwgroup/meta-cva6-yocto). To install it, you need to install its requirements :
+
+```
+sudo apt install gawk wget git diffstat unzip texinfo gcc build-essential chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev python3-subunit mesa-common-dev zstd liblz4-tool file locales
 ```
 
-You now should have a populated cva6-sdk/install64 folder.
+From the README of meta-cva6-yocto : 
+
+First install the repo tool
+
+```
+mkdir ${HOME}/bin
+curl https://storage.googleapis.com/git-repo-downloads/repo > ${HOME}/bin/repo
+chmod a+x ${HOME}/bin/repo
+PATH=${PATH}:~/bin
+```
+
+Create workspace
+
+```
+mkdir cva6-yocto && cd cva6-yocto
+repo init -u https://github.com/openhwgroup/meta-cva6-yocto -b main -m tools/manifests/cva6-yocto.xml
+repo sync
+repo start work --all
+```
+
+Setup Build Environment
+
+```
+. ./meta-cva6-yocto/setup.sh
+```
+
+To build the linux image:
+```
+MACHINE=cv32a6-genesys2 bitbake core-image-minimal
+```
+
+You now should have an image at build/tmp-glibc/deploy/images/${MACHINE}/core-image-minimal-cv32a6-genesys2.wic.gz
+
+## Flash
 
 You then need to flash your SD card with the cva6-sdk target. Insert the SD-card in your host and identify the correct device path with ```dmesg | tail``` command. 
 **Warning, providing a bad device path can mess up your system. Please double check**
 ```bash
-sudo -E make flash-sdcard SDDEVICE=/dev/sd$
+gunzip -c build/tmp-glibc/deploy/images/cv32a6-genesys2/core-image-minimal-cv32a6-genesys2.wic.gz | sudo dd of=/dev/sd$ bs=1M iflag=fullblock oflag=direct conv=fsync status=progress
 ```
 
 The SD card should now be formated and written, ready to boot. Insert it in the Genesys2 board and power it on. The console on the UART output should display the linux boot process and log in the system.
