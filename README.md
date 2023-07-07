@@ -1,10 +1,14 @@
 
 # Introduction
 
-In this repository we show how easy it is to reproduce a full debugging environment on the CVA6 processor on the Genesys 2 board. We provide a guide to regenerate the hardware bitsream and how to flash it on the board. Also, this guide explains how to generate the software tools and the compatible Linux image.
-Baremetal and Linux application debugging is also demonstrated in command line interface CLI or with the Eclipse graphical interface. 
+In this repository we show how easy it is to reproduce a full debugging environment on the CVA6 processor on the Genesys 2 board. We provide a guide to regenerate the hardware bitsream and how to flash it on the board. Also, this guide explains how to generate the software tools and the compatible Linux image based on Yocto.
+Baremetal and Linux application debugging is also demonstrated in command line interface CLI or with the Eclipse graphical interface.
 
-The hardware generate image is based on the commit [cva6:#d209b04](https://github.com/openhwgroup/cva6/tree/d209b0406dba696744185001bf7257af7d1d8890) and the Linux image is based on the commit [cva6-sdk:#cb35d1d](https://github.com/openhwgroup/cva6-sdk/tree/cb35d1dba01da51b1489fb109f1b5598bd655267).
+The hardware generate image is based on the commit [cva6:#018dbc4](https://github.com/openhwgroup/cva6/tree/018dbc4210ca5706c41e246c743226811e12b0d8) and the Linux image is based on the commit [meta-cva6-yocto:#b10911d](https://github.com/openhwgroup/cva6-sdk/tree/b10911d115aa7d98d07ec6f6d479d13a13af0975).
+
+# Choose the CVA6 configuration you want
+
+The CVA6 provides multiple configurations. They can be found in [cva6/core/include](cva6/core/include). You can also define your own configuration with the [cva6/config_pkg_generator.py](cva6/config_pkg_generator.py) tool.
 
 # Required depedencies
 
@@ -25,7 +29,8 @@ You will need to connect both the UART and the JTAG micro USB of the Genesys 2 t
 
 ### Vivado 2020.1
 
-You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also needed to program the bitsream onto the Genesys 2 board. ~~After installation the GenesysII board's configuration files need to be installed. You can find them here :~~
+You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also needed to program the bitsream onto the Genesys 2 board. 
+
 
 ### RISC-V Toolchain
 
