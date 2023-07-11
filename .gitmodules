@@ -1,9 +1,6 @@
 [submodule "cva6"]
 	path = cva6
 	url = https://github.com/openhwgroup/cva6
-[submodule "cva6-sdk"]
-	path = cva6-sdk
-	url = https://github.com/openhwgroup/cva6-sdk
 [submodule "riscv-gnu-toolchain"]
 	path = riscv-gnu-toolchain
 	url = https://github.com/riscv-collab/riscv-gnu-toolchain
