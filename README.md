@@ -4,11 +4,11 @@
 In this repository we show how easy it is to reproduce a full debugging environment on the CVA6 processor on the Genesys 2 board. We provide a guide to regenerate the hardware bitsream and how to flash it on the board. Also, this guide explains how to generate the software tools and the compatible Linux image based on Yocto.
 Baremetal and Linux application debugging is also demonstrated in command line interface CLI or with the Eclipse graphical interface.
 
-The hardware generate image is based on the commit [cva6:#018dbc4](https://github.com/openhwgroup/cva6/tree/018dbc4210ca5706c41e246c743226811e12b0d8) and the Linux image is based on the commit [meta-cva6-yocto:#b10911d](https://github.com/openhwgroup/cva6-sdk/tree/b10911d115aa7d98d07ec6f6d479d13a13af0975).
+The hardware generate image is based on the commit [cva6:#018dbc4](https://github.com/openhwgroup/cva6/tree/018dbc4210ca5706c41e246c743226811e12b0d8) and the Linux image is based on the commit [meta-cva6-yocto:#b10911d](https://github.com/openhwgroup/meta-cva6-yocto/tree/b10911d115aa7d98d07ec6f6d479d13a13af0975).
 
 # Choose the CVA6 configuration you want
 
-The CVA6 provides multiple configurations. They can be found in [cva6/core/include](cva6/core/include). You can also define your own configuration with the [cva6/config_pkg_generator.py](cva6/config_pkg_generator.py) tool. This python tool will create a file /core/include/gen32_config_pkg.sv or /core/include/gen64_config_pkg.sv depending on the configuration your modifications are based on.
+The CVA6 provides multiple configurations. They can be found in [cva6/core/include](cva6/core/include). You can also define your own configuration with the [cva6/config_pkg_generator.py](cva6/config_pkg_generator.py) tool. This python tool will create a file [/core/include/gen32_config_pkg.sv](/core/include/) or [/core/include/gen64_config_pkg.sv](/core/include/) depending on the configuration your modifications are based on.
 
 The core configuration will have impacts on the software configuration. Today, Yocto generates Linux images for rv64imafdc, rv32ima or rv32imac. MMU is required for Linux execution (eg. sv0 will not work). The baremetal demo can manage all configurations.
 
@@ -37,15 +37,23 @@ You will need Vivado 2020.1 to generate the hardware bitstream. Vivado is also n
 
 If you want to perform the baremetal demo, you will need the full fledge RISC-V toolchain. To compile it, go to the riscv-gnu-toolchain directory, choose a proper install path, the configured arch and abi and run the following command:
 ```bash
-./configure --prefix=RISCV_TOOLCHAIN_INSTALL_PATH --with-cmodel=medany --with-arch=rv32ima --with-abi=ilp32
-make
+# For the 32 bit configuration without floating registers, adapt accordingly to your configuration
+export ARCH=rv32ima
+export ABI=ilp32
+# For the 64 bits configuration
+#export ARCH=rv64gc 
+#export ABI=lp64d
+git submodule update --init --recursive riscv-gnu-toolchain
+cd riscv-gnu-toolchain
+./configure --prefix=RISCV_TOOLCHAIN_INSTALL_PATH --with-cmodel=medany --with-arch=$ARCH --with-abi=$ABI
+make install
 ```
 
-** Warning: You will need GCC13 if you want the Bitmanip extension **
+**Warning: You will need GCC13 if you want the Bitmanip extension**
 
 ### OpenOCD for RISC-V
 
-If you want to use a CLI debug, you will need openocd. Here are the steps to generate it :
+If you want to use a CLI debug, you will need openocd. Eclipse embedd its own OpenOCD. Here are the steps to generate it :
 
 ```
 git clone https://github.com/riscv/riscv-openocd
@@ -116,17 +124,16 @@ From the README of meta-cva6-yocto :
 First install the repo tool
 
 ```
-mkdir ${HOME}/bin
-curl https://storage.googleapis.com/git-repo-downloads/repo > ${HOME}/bin/repo
-chmod a+x ${HOME}/bin/repo
-PATH=${PATH}:~/bin
+curl https://storage.googleapis.com/git-repo-downloads/repo > ${RISCV}/bin/repo
+chmod a+x ${RISCV}/bin/repo
+PATH=${RISCV}/bin:${PATH}
 ```
 
 Create workspace
 
 ```
 mkdir cva6-yocto && cd cva6-yocto
-repo init -u https://github.com/openhwgroup/meta-cva6-yocto -b main -m tools/manifests/cva6-yocto.xml
+repo init -u https://github.com/openhwgroup/meta-cva6-yocto -b b10911d115aa7d98d07ec6f6d479d13a13af0975 -m tools/manifests/cva6-yocto.xml
 repo sync
 repo start work --all
 ```
