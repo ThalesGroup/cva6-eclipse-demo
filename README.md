@@ -140,6 +140,7 @@ You now should have an image at build/tmp-glibc/deploy/images/${MACHINE}/core-im
 ### Flash yocto
 
 You then need to flash your SD card with the cva6-sdk target. Insert the SD-card in your host and identify the correct device path with ```dmesg | tail``` command. 
+
 **Warning, providing a bad device path can mess up your system. Please double check**
 ```bash
 gunzip -c build/tmp-glibc/deploy/images/cv32a6-genesys2/core-image-minimal-cv32a6-genesys2.wic.gz | sudo dd of=/dev/sd$ bs=1M iflag=fullblock oflag=direct conv=fsync status=progress
@@ -194,6 +195,7 @@ You should have a gdb program with control on the CVA6. You can look around and 
 ## Eclipse debugging
 
 WIP
+
 Make sure that the linker option contains "--specs=nosys.specs".
 
 # Linux application debugging
@@ -210,7 +212,7 @@ Or set a static IP on the same network as the host like this:
 ifconfig eth0 192.168.##.##
 ```
 
-In order to transfer the elf binary, you can launch the SSH server. During the first launch, dropbear will generate a rsa key which take some times.
+In order to transfer the elf binary, you can launch the SSH server. This step is mandatory for the Eclipse debuging. During the first launch, dropbear will generate a rsa key which take some times.
 ```bash
 # On the Genesys2
 /etc/init.d/dropbear start
@@ -226,9 +228,11 @@ gdbserver localhost:3333 helloworld_printf.riscv
 ```
 Then connect to it from your host.
 ```bash
+# On the host
 $RISCV/bin/riscv[32/64]-unknown-linux-gnu-gdb helloworld_printf.riscv
 ```
 ```gdb
+# in gdb
 target remote CVA6_IP:3333
 c
 ```
