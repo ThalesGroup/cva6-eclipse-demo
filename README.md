@@ -193,6 +193,7 @@ You should have a gdb program with control on the CVA6. You can look around and 
 
 ## Eclipse debugging
 
+WIP
 Make sure that the linker option contains "--specs=nosys.specs".
 
 # Linux application debugging
@@ -234,7 +235,7 @@ c
 
 ## Eclipse debugging
 
-
+WIP
 
 Both the Baremetal and the Linux debugging shown previously can be achieved through the Eclipse graphical environment. This chapter explains how to set up the Eclipse projects for remote debugging.
 
