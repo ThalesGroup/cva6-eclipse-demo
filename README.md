@@ -238,31 +238,3 @@ c
 WIP
 
 Both the Baremetal and the Linux debugging shown previously can be achieved through the Eclipse graphical environment. This chapter explains how to set up the Eclipse projects for remote debugging.
-
-## Eclipse's project creation
-
-### Baremetal debugging
-
-
-### Linux debugging
-
-In Eclipse IDE, you can create a new project with File>New>C/C++ Project.
-
-Select "C Managed Build" and click Next.
-
-Let's start with a simple hello world:
-In the executable list, select "Hello World RISC-V C Project"
-Give your project a name and click Next.
-
-You must remove the linker option, set this box empty and click next twice.
-
-You now must indicate the toolchain. You can use the buildroot one by specifying the ```cva6-sdk/buildroot/output/host/bin``` path in the toolchain path box. Then click finish.
-
-Once the project is created, right click on the project, select "Properties" and go to C/C++Build>Settings>Toolchains tab. Change the prefix to "riscv64-linux-" and make sure the bottom boxes (Create flash image, Create extended listing and Print size) are left un-ticked.
-
-Now you can build the project: right click on it and select "Build project". An elf file should appear in the Debug folder of your project.
-
-
-create a new launch configuration
-configure ssh
-launch debug 
